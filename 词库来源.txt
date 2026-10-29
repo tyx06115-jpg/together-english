@@ -1,0 +1,7 @@
+词库来源说明
+
+数据：KyleBing/english-vocabulary，四级乱序词表（3 四级-乱序.txt），共 7,508 条。
+来源：https://github.com/KyleBing/english-vocabulary
+许可证：BSD-3-Clause（请随项目分发保留原仓库版权和许可证声明）。
+
+本站将原始词条整合为 words.js。原词表主要提供中文释义；音标和例句未包含在该版本中。
