@@ -4,14 +4,15 @@ const $ = (id) => document.getElementById(id);
 const meaningToggle = $('meaning-toggle');
 let words = [];
 let dailyWords = [];
+let activeLevel = 'cet4';
 let current = 0;
 let stats = { studied: 0, known: 0, review: 0, ratings: {} };
 let race = { active: false, scores: [0, 0], player: 0, question: 0, timer: null, locked: false, names: ['我', '妹妹'], roundWords: [] };
 
 function loadStats() {
-  try { stats = { ...stats, ...JSON.parse(localStorage.getItem(`yqxy-${dateKey}`) || '{}') }; } catch { /* Ignore invalid local data. */ }
+  try { stats = { studied: 0, known: 0, review: 0, ratings: {}, ...JSON.parse(localStorage.getItem(`yqxy-${activeLevel}-${dateKey}`) || '{}') }; } catch { /* Ignore invalid local data. */ }
 }
-function saveStats() { localStorage.setItem(`yqxy-${dateKey}`, JSON.stringify(stats)); }
+function saveStats() { localStorage.setItem(`yqxy-${activeLevel}-${dateKey}`, JSON.stringify(stats)); }
 function setProgress() {
   $('studied-count').textContent = stats.studied;
   $('known-count').textContent = stats.known;
@@ -95,10 +96,23 @@ $('race-start').addEventListener('click', () => {
   $('race-setup').hidden = true; $('race-game').hidden = false; $('race-reset').hidden = true; race.active = true; showRaceQuestion();
 });
 $('race-reset').addEventListener('click', () => { clearInterval(race.timer); race.active = false; $('race-game').hidden = true; $('race-setup').hidden = false; $('race-reset').hidden = true; });
-Promise.resolve(window.CET4_WORDS).then((data) => {
-  if (!Array.isArray(data) || data.length < DAILY_GOAL) throw new Error('词库加载失败');
-  words = data;
+function switchLevel(level) {
+  activeLevel = level;
+  words = level === 'cet6' ? window.CET6_WORDS : window.CET4_WORDS;
+  if (!Array.isArray(words) || words.length < DAILY_GOAL) { $('word-title').textContent = '词库无法加载'; return; }
+  clearInterval(race.timer); race.active = false;
+  document.querySelectorAll('.level-button').forEach((button) => {
+    const selected = button.dataset.level === level;
+    button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
+  });
+  $('race').hidden = level === 'cet6';
+  const label = level === 'cet6' ? '六级' : '四级';
+  $('progress-title').textContent = `今日${label}学习进度`;
+  $('study-level-label').textContent = `今日${label}单词`;
   $('total-count').textContent = DAILY_GOAL;
   document.querySelector('.progress-track').setAttribute('aria-valuemax', String(DAILY_GOAL));
+  current = 0; stats = { studied: 0, known: 0, review: 0, ratings: {} };
   loadStats(); makeDailyList(); setProgress(); renderWord();
-}).catch(() => { $('word-title').textContent = '词库无法加载'; $('status-message').textContent = '请通过本地网页服务器打开，不能直接双击 index.html。'; });
+}
+document.querySelectorAll('.level-button').forEach((button) => button.addEventListener('click', () => switchLevel(button.dataset.level)));
+switchLevel('cet4');
